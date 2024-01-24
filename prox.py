@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#coding:utf-8
 """
 TCP Proxy server.  Listens on a port for connections, initiates
 a connection to the real server, and copies data between the
@@ -79,7 +80,7 @@ class Server(object) :
         self.q = q
     def preWait(self, rr, r, w, e) :
         r.append(self.sock)
-    def postWait(self, r, w, e) :
+    def postWait(self, r, w, e) : # 服务器对象的postWait就是看看有没有新的客户端请求，有的话把这个请求做成一个proxy对象
         if self.sock in r :
             try :
                 cl,addr = self.sock.accept()
@@ -87,7 +88,7 @@ class Server(object) :
                 print "ssl error during accept", e
                 return
             cl.setblocking(0)
-            self.q.append(Proxy(self.opt, cl, addr))
+            self.q.append(Proxy(self.opt, cl, addr)) # 有客户端连接就创建一个代理对象并放入队列
             if self.opt.oneshot :
                 safeClose(self.sock)
                 return 'elvis has left the building'
@@ -100,7 +101,7 @@ class Half(object) :
         self.addr = addr
         self.dir = dir
 
-        self.name = "peer" if self.dir else "client"
+        self.name = "peer" if self.dir == 'o' else "client" # 一直是peer，bug？
         self.queue = []
         self.dest = None
         self.err = None
@@ -215,14 +216,15 @@ class Proxy(object) :
 
 def serverLoop(opt) :
     qs = []
-    qs.append(Server(opt, qs))
+    qs.append(Server(opt, qs)) # 将一个服务器对象放入队列，这个服务器对象有一个监听代理服务器的地址的套接字（这里是0.0.0.0:8888，客户端请求的地址是127.0.0.1:8888，但也会被监听到）
     while qs :
         # note: rr holds "read already ready"
         # meaning it wasnt fully drained last time
+#        import pdb; pdb.set_trace()
         rr,r,w,e = [], [], [], []
         for q in qs :
             q.preWait(rr, r, w, e)
-        timeo = 10.0 if not rr else 0.0
+        timeo = 5 if not rr else 0.0
         r,w,e = select(r, w, e, timeo)
         r = set(r).union(rr)
         for q in qs :
@@ -297,6 +299,7 @@ def initModule(modstr) :
 
 def main() :
     opt = getopts()
+    print opt
     if opt.sslIn and opt.autoCname :
         autoCert(opt.autoCname, opt.cert, "autocert")
         opt.cert = "autocert"

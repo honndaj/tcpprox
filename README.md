@@ -25,6 +25,17 @@ for generating CA and SSL certificates. This utility is the only
 component that relies on an external python library, but it can 
 be run on a different machine if necessary.
 
+MY TEST CASE
+======
+
+- Normal TCP proxy 
+   - $ python2 ./prox.py -L 8888 www.httpbin.org 80  
+   - connect this proxy in another terminal  
+     \$ curl http://127.0.0.1:8888/get?name=honndaj  
+     which is the same as  
+     $ curl http://httpbin.org(:80)/get?name=honndaj  
+   - or visit in the browser  
+   - the reason why google or baidu isnt work may they dont support http  
 
 QUICKSTART
 =======
